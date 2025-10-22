@@ -1,6 +1,6 @@
 import regex as re
 
-P_TEL = re.compile(r"^(\d{3}-){2}\d{3}$")
+P_TEL = re.compile(r"^(?P<Telefono>(\d{3}-){2}\d{3}$)")
 P_DNINIF = re.compile(r"^(\d{8}|[XYZ]\d{7})-[TRWAGMYFPDXBNJZSQVHLCKE]$")
 P_INSTANTE = re.compile(r"(?i)^(?P<formato1>(?P<anio>(?!0000)\d{4})-(?P<mes>((0[1-9])|1[0-2]))-(?P<dia>(0[1-9]|[12][0-9]|3[01]))\s+(?P<hora>([01][0-9]|2[0-3])):(?P<minutos>([0-5]\d)))$|^(?P<formato2>(?P<mes>(January|February|March|April|May|June|July|August|September|October|November|December))\s+(?P<dia>([1-9]|[12][0-9]|3[01])),\s+(?P<anio>(?!0)([1-9]\d{0,3}))\s+(?P<hora>([1-9]|1[012])):(?P<minutos>([0-5]\d))\s+(?P<horario>[AP]M))$|^(?P<formato3>(?P<hora>([01][0-9]|2[0-3]))\:(?P<minutos>([0-5]\d))\:(?P<segundos>([0-5]\d))\s+(?P<dia>(0[1-9]|[12][0-9]|3[01]))\/(?P<mes>(0[1-9])|1[0-2])\/(?P<anio>(?!0000)\d{4}))$")
 P_COORDENADA = re.compile(r"(?P<formato1>^(?P<signolat>[-+]?)(?P<latitud>(\d\.\d+|[1-8][0-9]\.\d+|90\.0))(\s*)(\,)(\s*)(?P<signolon>[-+]?)(?P<longitud>(0\.\d+|[1-9]\d?\.\d+|1[0-7]\d.\d+|180\.0))$)|(?P<formato2>^(?P<latitud>(\d|[1-8]\d|90))(\°)\s*(?P<minutoslat>(\d|[1-5]\d))\'\s*(?P<segundoslat>([1-5]?\d\.\d{4}))\"\s*(?P<orientacionlat>[NS])\s*\,\s*(?P<longitud>(?<!0)\d|[1-9]\d|1[0-7]\d|180)(\°)\s*(?P<minutoslon>((\d|[1-5]\d)))\'\s*(?P<segundoslon>([1-5]?\d\.\d{4}))\"\s*(?P<orientacionlon>[WE]$))|(?P<formato3>^(?P<latitud>0([0-8]\d|90))(?P<minutoslat>([0-5]\d))(?P<segundoslat>([0-5]\d\.\d{4}))(?P<orientacionlat>[NS])(?P<longitud>(0\d\d|1[0-7]\d|180))(?P<minutoslon>([0-5]\d))(?P<segundoslon>([0-5]\d\.\d{4}))(?P<orientacionlon>[WE])$)")
@@ -15,7 +15,9 @@ def comprobar_telefono(telefono):
     tel = P_TEL.fullmatch(telefono)
     if tel is not None:
         tel_singuiones = re.sub(r'\-','',tel.group(0))
-        return re.sub(r'^\d{9}$', r'+34\g<0>', tel_singuiones)
+        tel34 = re.sub(r'^\d{9}$', r'+34\g<0>', tel_singuiones)
+        diccionarioTelefono = {"Telefono": tel34}
+        return diccionarioTelefono
     else:
         return None
 
@@ -61,7 +63,8 @@ def comprobarformato_NIFNIE(nif):
     match = P_DNINIF.fullmatch(nif)
     if match:
         if validar_nif(match.group(0)):
-            return nif
+            diccionarioNIF = {"NIF": match.group(0)}
+            return diccionarioNIF
         else:
             return False
     else:
@@ -88,7 +91,8 @@ def comprobar_instante(instante):
                 segundos = match.group("segundos")
                 checkfecha = fecha_correcta(anio, mes, dia)
                 if checkfecha:
-                    return [anio, mes, dia, hora, minutos, segundos]
+                    diccionarioFechaF1 = {"Fecha": match.group("formato1")}
+                    return diccionarioFechaF1
                 else:
                     return None
             if match.group("formato2"):
@@ -102,7 +106,8 @@ def comprobar_instante(instante):
 
                 checkfecha = fecha_correcta(anio, mes, dia)
                 if checkfecha:
-                    return [anio, mes, dia, hora, minutos, segundos]
+                    diccionarioFechaF2 = {"Fecha": match.group("formato2")}
+                    return diccionarioFechaF2
                 else:
                     return None
 
@@ -117,7 +122,8 @@ def comprobar_instante(instante):
 
                 checkfecha = fecha_correcta(anio, mes, dia)
                 if checkfecha:
-                    return [anio, mes, dia, hora, minutos, segundos]
+                    diccionarioFechaF3 = {"Fecha": match.group("formato3")}
+                    return diccionarioFechaF3
                 else:
                     return None
     except:
@@ -206,11 +212,10 @@ def comprobar_coordenada(coordenada):
                 signolon = match.group("signolon")
                 longitud = match.group("longitud")
 
-                latitud = signolat+latitud
-                longitud = signolon+longitud
-                return [latitud, longitud]
+                diccionarioCoordenadaF1 = {"Coordenada": match.group("formato1")}
+                return diccionarioCoordenadaF1
 
-            if match.group("formato2") or match.group("formato3"):
+            if match.group("formato2"):
 
                 latitud = match.group("latitud")
                 minutoslat = match.group("minutoslat")
@@ -223,9 +228,26 @@ def comprobar_coordenada(coordenada):
 
                 checkcoordenada = check_coordenada(latitud, minutoslat, segundoslat,longitud, minutoslon, segundoslon)
                 if checkcoordenada:
-                    latitud = latitud+"º "+minutoslat+"' "+segundoslat+"''"
-                    longitud= longitud+"º "+ minutoslon+"' "+segundoslon+"''"
-                    return [latitud, longitud]
+                    diccionarioCoordenadaF2 = {"Coordenada": match.group("formato2")}
+                    return diccionarioCoordenadaF2
+                else:
+                    return None
+
+            if match.group("formato3"):
+
+                latitud = match.group("latitud")
+                minutoslat = match.group("minutoslat")
+                segundoslat = match.group("segundoslat")
+                orientacionlat = match.group("orientacionlat")
+                longitud = match.group("longitud")
+                minutoslon = match.group("minutoslon")
+                segundoslon = match.group("segundoslon")
+                orientacionlon = match.group("orientacionlon")
+
+                checkcoordenada = check_coordenada(latitud, minutoslat, segundoslat,longitud, minutoslon, segundoslon)
+                if checkcoordenada:
+                    diccionarioCoordenadaF3 = {"Coordenada": match.group("formato3")}
+                    return diccionarioCoordenadaF3
                 else:
                     return None
     except:
